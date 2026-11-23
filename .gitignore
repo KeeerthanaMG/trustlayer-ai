@@ -1,0 +1,4 @@
+.codex/probe-audit.jsonl
+TRUSTLAYER_BLOCK_PROBE.txt
+.codex/probe-effects.log
+__pycache__/

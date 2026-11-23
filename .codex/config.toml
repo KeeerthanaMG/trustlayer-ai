@@ -1,0 +1,10 @@
+[mcp_servers.trustlayer_probe]
+command = "python"
+args = [".codex/probe_server.py"]
+cwd = "D:/trustlayer-ai"
+
+[mcp_servers.trustlayer_probe.tools.allow_probe]
+approval_mode = "approve"
+
+[mcp_servers.trustlayer_probe.tools.block_probe]
+approval_mode = "approve"
