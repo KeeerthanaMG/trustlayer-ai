@@ -26,7 +26,9 @@ try {
     $env:SYNAPSE_TELEMETRY = '0'
     if (-not (Test-Path '.synapse/config.json')) {
         & $cli init
-        if ($LASTEXITCODE -ne 0) { throw 'Synapse initialization failed.' }
+        if ($LASTEXITCODE -ne 0 -or -not (Test-Path '.synapse/config.json')) {
+            throw 'Synapse initialization did not create project configuration.'
+        }
     }
 
     $query = @"

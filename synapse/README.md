@@ -22,6 +22,12 @@ Its report includes per-case round-trip time after the MCP session has
 initialized, call counts, decisions and matched rule IDs. This deterministic
 client measures MCP calls without model inference or server startup time.
 
+On this Windows machine, Tree-sitter crashed under Node 20.17.0 and loaded
+successfully under Node 24.11.1. The project-local install uses the native
+binary bundled with the official package. The build script uses the portable
+Node 24.11.1 distribution when present in
+`.synapse-npm-cache/node-v24.11.1-win-x64/` and otherwise uses Node from PATH.
+
 ## Generate and compare
 
 In the Synapse console, create an API key under your own account. In a local
