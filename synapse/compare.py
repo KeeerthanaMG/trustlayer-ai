@@ -16,6 +16,10 @@ CASES = (
     ("file.delete", "project/uploads/example.txt", "BLOCK"),
     ("file.write", "project/example.txt", "BLOCK"),
 )
+COMPOSED_EDGE_CASES = (
+    ("shell.run", "project/example.txt", "BLOCK"),
+    ("file.read", "project/../example.txt", "BLOCK"),
+)
 
 
 async def call(session, name, arguments):
@@ -29,7 +33,7 @@ async def call(session, name, arguments):
     return data.get("result", data)
 
 
-async def run_cases(server_args, policy, tool):
+async def run_cases(server_args, policy, tool, cases=CASES):
     params = StdioServerParameters(
         command=sys.executable,
         args=server_args,
@@ -39,7 +43,7 @@ async def run_cases(server_args, policy, tool):
         async with ClientSession(reader, writer, read_timeout_seconds=timedelta(seconds=30)) as session:
             await session.initialize()
             rows = []
-            for action, resource, expected in CASES:
+            for action, resource, expected in cases:
                 arguments = {"action": action, "resource": resource}
                 calls = 0
                 start = perf_counter()
@@ -78,14 +82,21 @@ async def main():
     report = {"baseline": baseline}
     success = all(row.get("decision") == row["expected"] for row in baseline)
     if args.generated:
-        composed = await run_cases([str(args.generated.resolve())], args.policy, args.tool)
+        composed_rows = await run_cases(
+            [str(args.generated.resolve())], args.policy, args.tool, CASES + COMPOSED_EDGE_CASES
+        )
+        composed = composed_rows[:len(CASES)]
+        edge_cases = composed_rows[len(CASES):]
         report["composed"] = composed
+        report["composed_edge_cases"] = edge_cases
         report["agreement"] = all(
             left.get("decision") == right.get("decision") == left["expected"]
             and left.get("matched_policy_ids") == right.get("matched_policy_ids")
             for left, right in zip(baseline, composed)
         )
-        success = success and report["agreement"]
+        success = success and report["agreement"] and all(
+            row.get("decision") == row["expected"] for row in edge_cases
+        )
     print(json.dumps(report, indent=2))
     return 0 if success else 1
 

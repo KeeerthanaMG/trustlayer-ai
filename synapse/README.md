@@ -28,7 +28,17 @@ binary bundled with the official package. The build script uses the portable
 Node 24.11.1 distribution when present in
 `.synapse-npm-cache/node-v24.11.1-win-x64/` and otherwise uses Node from PATH.
 
-## Generate and compare
+## Run the composed tool and compare
+
+The reviewed, generated server is checked into the repository. Running it and
+the comparison requires the isolated Python environment above. Generation is
+only needed when changing the tool composition.
+
+```powershell
+& $python -m synapse.compare --generated .\evaluate_action_safety_server.py
+```
+
+## Regenerate with Synapse
 
 In the Synapse console, create an API key under your own account. In a local
 PowerShell window, run the build script and paste the key at its masked prompt.
@@ -37,13 +47,36 @@ Only use the repository source and sample policy in the demonstration.
 
 ```powershell
 .\synapse\build-custom.ps1
-& $python -m synapse.compare --generated .\evaluate_action_safety_server.py
 ```
 
-Use the actual filename and, if different, the tool name printed by Synapse.
-Review the generated source before running it. Then register the generated
-server in the agent using the Synapse connection settings, the isolated Python
-path above, and an operator-controlled TRUSTLAYER_POLICY environment variable.
+Regenerate in a disposable checkout. Use the filename and tool name printed
+by Synapse, then review the generated composition and apply the shared
+validation and response contract described below before replacing the reviewed
+server. Register it in the agent using the Synapse connection settings, the
+isolated Python path above, and an operator-controlled TRUSTLAYER_POLICY
+environment variable.
 
-Status for this checkpoint is baseline verified. Generated server, comparison,
-and live agent invocation require a successful Synapse Custom build.
+## Verified comparison
+
+Synapse CLI 0.1.9 generated `evaluate_action_safety_server.py` in Custom mode.
+The checked-in version keeps the generated three-part composition and uses the
+standalone engine's validation and structured response. The server operator
+selects the Markdown policy. The MCP caller supplies the action and resource.
+
+| Case | Decision | Individual calls | Composed calls | Individual ms | Composed ms |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Read a project file | ALLOW | 3 | 1 | 13.41 | 17.48 |
+| Delete a project file | REQUIRE_APPROVAL | 3 | 1 | 9.93 | 3.89 |
+| Delete a protected upload | BLOCK | 3 | 1 | 7.43 | 2.94 |
+| Write without a matching rule | BLOCK | 3 | 1 | 7.06 | 2.72 |
+
+These are single-run Windows MCP round-trip observations. Both paths agreed on
+all four decisions and their matched rule IDs. A separate live Codex session
+used nine individual calls and three composed calls to evaluate the same
+read, delete and protected-delete scenarios. A fourth composed call returned
+BLOCK for an unsupported shell action. All 13 calls completed without tool
+errors. The deterministic comparison also verified BLOCK for a malformed
+resource identifier.
+
+The baseline is a fixture for supported, normalized inputs. The composed
+tool returns approval requirements for the enforcement layer to handle.

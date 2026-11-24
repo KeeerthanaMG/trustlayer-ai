@@ -50,6 +50,13 @@ def evaluate_action(policy_path: Path, action: str, resource: str) -> Evaluation
     """Evaluate caller-supplied identifiers under an operator-selected policy."""
     risk = classify_action(action)
     consequence = evaluate_consequences(action)
+    return evaluate_checks(policy_path, action, resource, risk, consequence)
+
+
+def evaluate_checks(
+    policy_path: Path, action: str, resource: str, risk: str | None, consequence: str
+) -> Evaluation:
+    """Finish evaluation using the action's server-computed classification and impact."""
     if risk is None:
         return Evaluation(Decision.BLOCK, action, resource, "unknown", consequence, (),
                           "Unsupported action type.")
