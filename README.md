@@ -35,3 +35,35 @@ human approval belong to the enforcement adapter.
 ```powershell
 python -m unittest discover -s tests -v
 ```
+
+## Try the approval popup on Windows
+
+From the repository root, create two disposable files in a fresh test directory:
+
+```powershell
+$fixtureRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("trustlayer-demo-" + [guid]::NewGuid())
+New-Item -ItemType Directory -Path (Join-Path $fixtureRoot 'project/uploads') -Force | Out-Null
+Set-Content -LiteralPath (Join-Path $fixtureRoot 'project/example.txt') -Value 'disposable'
+Set-Content -LiteralPath (Join-Path $fixtureRoot 'project/uploads/example.txt') -Value 'protected fixture'
+python -m trustlayer.approval --policy TRUSTLAYER.md --fixture-root $fixtureRoot project/example.txt
+```
+
+Choose **Block** and verify the file remains. Rerun the same command and choose
+**Approve & Proceed** to delete only that test file. Closing the popup or waiting
+30 seconds denies the request. To verify a hard block, run the command with
+`project/uploads/example.txt`. The sample policy denies it immediately.
+
+The demo acts on two fixed fixture names in an operator-controlled directory.
+Keep both the fixture directory and the policy outside the agent workspace.
+The demo checks target metadata and reevaluates applicable policy before
+deleting. An operator-controlled directory is required for protection against
+concurrent path replacement.
+
+For a Codex fixture session, register `python -m synapse.approval_demo` as a
+local MCP server using the Python environment in [the MCP setup](synapse/README.md).
+Set its working directory to this repository and supply absolute paths for
+`TRUSTLAYER_POLICY` and `TRUSTLAYER_FIXTURE_ROOT` in the server environment.
+Ask Codex to call `delete_disposable_fixture` with `project/example.txt`.
+The popup gates this MCP tool's file operation. It leaves other Codex tools
+under their existing controls. The demo uses the shared Python evaluator.
+Routing live interception through the Synapse server is the next milestone.
