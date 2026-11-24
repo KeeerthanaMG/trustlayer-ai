@@ -67,3 +67,48 @@ Ask Codex to call `delete_disposable_fixture` with `project/example.txt`.
 The popup gates this MCP tool's file operation. It leaves other Codex tools
 under their existing controls. The demo uses the shared Python evaluator.
 Routing live interception through the Synapse server is the next milestone.
+
+## Integrated Codex demo
+
+Use the isolated Python environment from [the MCP setup](synapse/README.md).
+From the repository root in PowerShell, create a fresh disposable Codex project:
+
+```powershell
+$python = '.\.synapse-npm-cache\mcp-venv\Scripts\python.exe'
+$demo = "D:\trustlayer-demo-" + [guid]::NewGuid().ToString('N')
+& $python -m synapse.setup_demo $demo
+codex -C $demo -s read-only
+```
+
+In the new session, review the freshly generated project configuration and
+trust the fixture project and its hook in Codex. Use `/hooks` to verify the
+hook is active. Then paste the following prompt:
+
+> Use only the TrustLayer protected MCP tools. Read project/example.txt, then
+> request deletion of project/uploads/example.txt, then request deletion of
+> project/example.txt. Use one tool call per action and do not retry.
+
+The read proceeds silently. The upload deletion is blocked before the tool
+runs. The regular deletion prompts for approval. First choose **Block**, then
+request it again and choose **Approve & Proceed**. Check the disposable file
+and the audit records:
+
+```powershell
+Test-Path (Join-Path $demo 'fixtures/project/example.txt')
+Test-Path (Join-Path $demo 'fixtures/project/uploads/example.txt')
+Get-Content (Join-Path $demo 'audit.jsonl')
+```
+
+The hook calls the generated Synapse MCP evaluator before dispatch. The
+fixture executor independently calls the same evaluator and owns approval
+and the file operation. An unavailable evaluator, invalid response, or
+unwritable audit log prevents a new operation. After approval, the executor
+checks the decision and target again. The audit stores the stage, logical
+fixture, decision and execution status. It omits file contents and absolute
+target paths.
+
+Coverage is limited to the two protected fixture tools. This demo assumes
+an operator-controlled fixture directory, policy and code. Native shell and
+other Codex or MCP tools retain their own controls. Run the full automated
+test suite in the MCP environment with
+`& $python -m unittest discover -s tests -v`.

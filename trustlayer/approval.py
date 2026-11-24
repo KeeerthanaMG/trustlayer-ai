@@ -39,11 +39,18 @@ def fixture_state(root: Path, resource: str):
     return target, (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns)
 
 
-def delete_fixture(policy: Path, root: Path, resource: str, approve=request_approval) -> dict:
+def delete_fixture(policy: Path, root: Path, resource: str, approve=request_approval,
+                   evaluate=evaluate_action) -> dict:
     """Evaluate and execute one fixed demo action in an operator-controlled directory."""
+    return run_fixture(policy, root, "file.delete", resource, approve, evaluate)
+
+
+def run_fixture(policy, root, action, resource, approve, evaluate):
     if resource not in FIXTURES:
         return {"executed": False, "decision": "BLOCK", "reason": "Unknown disposable fixture."}
-    evaluation = evaluate_action(policy, "file.delete", resource)
+    if action not in {"file.read", "file.delete"}:
+        return {"executed": False, "decision": "BLOCK", "reason": "Unsupported fixture action."}
+    evaluation = evaluate(policy, action, resource)
     result = {**asdict(evaluation), "executed": False}
     if evaluation.decision == Decision.BLOCK:
         return result
@@ -54,11 +61,15 @@ def delete_fixture(policy: Path, root: Path, resource: str, approve=request_appr
         if evaluation.decision == Decision.REQUIRE_APPROVAL and not approve(evaluation, target):
             return {**result, "reason": "Approval declined, unavailable, or expired."}
         if (
-            fixture_state(root, resource) != (target, state)
-            or evaluate_action(policy, "file.delete", resource) != evaluation
+            evaluate(policy, action, resource) != evaluation
+            or fixture_state(root, resource) != (target, state)
         ):
             return {**result, "reason": "The target or applicable policy changed. Evaluate again."}
-        target.unlink()
+        if action == "file.delete":
+            target.unlink()
+        else:
+            with target.open("rb") as fixture:
+                result["bytes_read"] = len(fixture.read(4096))
     except (OSError, ValueError) as error:
         return {**result, "reason": f"Fixture action stopped: {error}"}
     return {**result, "executed": True}
