@@ -1,6 +1,6 @@
 {
   "name": "@keeerthanamg/trustlayer-ai",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Local prompt review and pre-execution approval hooks for Cursor desktop",
   "bin": {"trustlayer-ai": "cursor/install.cjs"},
   "engines": {"node": ">=20"},

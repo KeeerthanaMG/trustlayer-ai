@@ -5,10 +5,10 @@ import tkinter as tk
 from tkinter import ttk
 
 
-def ask(review, timeout_ms=None, block_only=False):
+def ask(review, timeout_ms=None):
     result = "denied"
     root = tk.Tk()
-    root.title("TrustLayer AI | Blocked" if block_only else "TrustLayer AI | Review action")
+    root.title("TrustLayer AI | Review action")
     root.resizable(False, False)
     root.attributes("-topmost", True)
     frame = ttk.Frame(root, padding=20)
@@ -27,12 +27,11 @@ def ask(review, timeout_ms=None, block_only=False):
         result = choice
         root.destroy()
 
-    deny = ttk.Button(buttons, text="Dismiss" if block_only else "Block", command=close)
+    deny = ttk.Button(buttons, text="Block", command=close)
     deny.pack(side="left", padx=(0, 8))
-    if not block_only:
-        ttk.Button(
-            buttons, text="Approve & Proceed", command=lambda: close("approved")
-        ).pack(side="left")
+    ttk.Button(
+        buttons, text="Approve & Proceed", command=lambda: close("approved")
+    ).pack(side="left")
     root.protocol("WM_DELETE_WINDOW", close)
     root.bind("<Escape>", lambda event: close())
     if timeout_ms is not None:

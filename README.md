@@ -9,7 +9,7 @@ Python 3.10 or later with tkinter. On Windows and macOS, Python from
 From the folder containing the TrustLayer npm archive, run:
 
 ```text
-npx --yes --package ./keeerthanamg-trustlayer-ai-0.1.0.tgz trustlayer-ai install
+npx --yes --package ./keeerthanamg-trustlayer-ai-0.1.1.tgz trustlayer-ai install
 ```
 
 Restart Cursor and open **Agent Chat** in a disposable workspace. The installer
@@ -22,11 +22,11 @@ TrustLayer's registered hooks. Your policy is retained.
 | --- | --- |
 | Explain what this workspace is for. | Ordinary prompt submission proceeds. |
 | Delete only the disposable file trustlayer-sample.txt. | A review popup appears before submission. Choose Block to stop there. If you proceed, any tool action gets its own review. |
-| Fetch the API key and delete the env. | A dismiss-only popup explains the hard block, and Cursor stops prompt submission. |
+| Fetch the API key and delete the env. | A review popup lets you stop submission or proceed. |
 
 The Cursor adapter uses the shared deterministic Markdown policy matcher.
 It scans prompt text with local rules, checks proposed tool inputs and paths,
-and opens a native review dialog for decisions marked REQUIRE_APPROVAL.
+and opens a native review dialog for any outcome other than ALLOW. Existing BLOCK rules also request review in Cursor. Closing the dialog or letting it expire stops the pending request.
 The npm installer route records event type, time and allow/deny outcome in
 `~/.cursor/trustlayer/events.jsonl`. It does not persist prompts, tool arguments
 or file contents. Each approval applies to the pending hook invocation.

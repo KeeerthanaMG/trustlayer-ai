@@ -4,7 +4,6 @@ import os
 import re
 import sys
 from datetime import datetime, timezone
-from tkinter import TclError
 from pathlib import Path
 
 PACKAGE = Path(__file__).resolve().parents[1]
@@ -103,21 +102,14 @@ def process(event, payload, policy, show=ask):
     decision, matches = match_policies(load_policies(policy), action, resource)
     decisive = ", ".join(rule.id for rule in matches if rule.decision == decision)
     explanation = f"Matched policy: {decisive}" if decisive else "No matching policy rule."
-    if decision == Decision.REQUIRE_APPROVAL or (decision == Decision.BLOCK and matches):
-        blocked = decision == Decision.BLOCK
+    if decision != Decision.ALLOW:
         review = {
             "action": action, "resource": target, "target": target,
-            "risk": "blocked by policy" if blocked else "review required", "reason": explanation,
+            "risk": "review required", "reason": explanation,
             "consequence": "This decision applies only to the pending Cursor event.",
         }
-        if blocked:
-            try:
-                show(review, timeout_ms=10000, block_only=True)
-            except TclError:
-                pass
-        else:
-            return show(review, timeout_ms=30000) == "approved", "Approval declined or expired."
-    return decision == Decision.ALLOW, f"TrustLayer blocked the request. {explanation}"
+        return show(review, timeout_ms=30000) == "approved", "Approval declined or expired."
+    return True, ""
 
 
 def output(event, allowed, reason):
