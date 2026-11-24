@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeSubmitPrompt": [{"command":"node ./cursor/launch.cjs prompt","timeout":45,"failClosed":true}],
+    "preToolUse": [{"command":"node ./cursor/launch.cjs tool","timeout":45,"failClosed":true}],
+    "beforeReadFile": [{"command":"node ./cursor/launch.cjs read","timeout":45,"failClosed":true}]
+  }
+}

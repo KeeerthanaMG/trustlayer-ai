@@ -4,3 +4,4 @@ TRUSTLAYER_BLOCK_PROBE.txt
 __pycache__/
 .synapse-npm-cache/
 .synapse/
+release/

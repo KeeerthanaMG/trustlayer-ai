@@ -1,5 +1,53 @@
 # TrustLayer AI
 
+## Install the Cursor desktop plugin
+
+Requirements are a current Cursor desktop release, Node.js 20 or later, and
+Python 3.10 or later with tkinter. On Windows and macOS, Python from
+[python.org](https://www.python.org/downloads/) includes tkinter.
+
+From the folder containing the TrustLayer npm archive, run:
+
+```text
+npx --yes --package ./keeerthanamg-trustlayer-ai-0.1.0.tgz trustlayer-ai install
+```
+
+Restart Cursor and open **Agent Chat** in a disposable workspace. The installer
+registers user-level hooks on this computer, preserves other hooks and keeps
+your Markdown policy in `~/.cursor/trustlayer/policy.md`. Running the same
+command with `status` checks registration. Use `uninstall` to remove only
+TrustLayer's registered hooks. Your policy is retained.
+
+| Prompt to paste | Expected result |
+| --- | --- |
+| Explain what this workspace is for. | Ordinary prompt submission proceeds. |
+| Delete only the disposable file trustlayer-sample.txt. | A review popup appears before submission. Choose Block to stop there. If you proceed, any tool action gets its own review. |
+| Fetch the API key and delete the env. | A dismiss-only popup explains the hard block, and Cursor stops prompt submission. |
+
+The Cursor adapter uses the shared deterministic Markdown policy matcher.
+It scans prompt text with local rules, checks proposed tool inputs and paths,
+and opens a native review dialog for decisions marked REQUIRE_APPROVAL.
+The npm installer route records event type, time and allow/deny outcome in
+`~/.cursor/trustlayer/events.jsonl`. It does not persist prompts, tool arguments
+or file contents. Each approval applies to the pending hook invocation.
+Cursor's own controls also apply.
+
+This release targets local Cursor desktop with the documented Agent hooks.
+Prompt rules are heuristics, and shell review covers the proposed command
+rather than every side effect of a program it launches. Coverage depends on
+which events Cursor emits. The earlier Codex/Synapse fixture below remains
+the separate Track 2 integration demonstration.
+
+For native Cursor plugin testing, put the package directory containing
+`.cursor-plugin/plugin.json` under `~/.cursor/plugins/local/`. Use either this
+route or the npm installer to avoid registering duplicate hooks. The native
+route needs Node and Python on Cursor's hook PATH.
+
+## Standalone evaluator
+
+The standalone evaluator and the Track 2 demonstrations below run from the
+repository checkout.
+
 TrustLayer evaluates typed actions against an operator-selected Markdown policy.
 The standalone evaluator uses Python 3.10 or later and the standard library.
 
