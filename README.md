@@ -1,12 +1,13 @@
 ﻿# TrustLayer AI
 
-**Catch risky AI actions before they happen, then turn the warning into a safer next prompt.**
+**Three safety checks. One call. Catch risky AI actions before they run.**
 
-## What you get
+## Why TrustLayer AI?
 
-- **Review before it runs.** Pause flagged prompts and tool calls in Cursor or Codex.
-- **Keep your context.** Choose **Block and refine prompt**, then paste the suggested prompt into the same chat. Choose **Approve & Proceed** to continue with the original.
-- **Set your own rules.** Edit a local Markdown policy. The desktop hooks keep no runtime logs.
+- **The problem.** When an agent proposes deleting a file, it needs to identify the action, assess what could be lost, and check the owner's policy before acting. With those checks exposed as separate tools, the agent makes **three calls per action** and has to combine the results itself. A missed check can leave a risky action unreviewed.
+- **One tool runs all three checks.** Synapse CLI Custom mode composes action classification, consequence assessment, and policy checks into a single MCP tool. It returns one decision with the reason and matched rules.
+- **67% fewer tool calls.** In a live Codex comparison, the same three scenarios took **9 calls with individual tools and 3 with TrustLayer's composed tool**. Both approaches returned the same decisions. [Measured results](synapse/README.md)
+- **The user stays in control.** Pause flagged prompts and tool calls in Cursor or Codex. Choose **Block and refine prompt** to get a safer suggestion for the same chat, or **Approve & Proceed** to continue. Edit the local Markdown policy to choose what gets reviewed.
 
 ## Install on Windows or macOS
 
@@ -28,11 +29,9 @@
 2. Choose **Block and refine prompt**. The original stops and TrustLayer shows a read-only suggestion.
 3. Paste the suggestion into the **current** chat and review it before sending. The host hook APIs do not expose in-place composer editing.
 
-## Why Synapse matters · Vibe-a-thon Track 2
+## See it in action
 
-- **Generated with Synapse CLI Custom mode.** One MCP tool combines action classification, consequence assessment, and policy checks.
-- **Measured live in Codex.** The same three cases took **9 individual calls vs. 3 composed calls**, with identical decisions.
-- **Enforced in the integrated demo.** The Codex hook calls the generated evaluator before dispatch. The fixture executor uses it again to enforce policy and approval.
+- The Codex hook calls the Synapse-generated evaluator before dispatch. The fixture executor checks the decision again before allowing the operation.
 
 [Synapse build and measured results](synapse/README.md) · [End-to-end demo and test commands](docs/demo.md)
 
@@ -40,4 +39,4 @@
 
 - **Policy** lives under `~/.cursor/trustlayer/policy.md` or `~/.codex/trustlayer/policy.md`. A custom `CODEX_HOME` takes precedence for the Codex installer.
 - **Desktop hooks** retain no prompts, tool inputs, or event logs. The host may keep its own history. Prior releases may have left an `events.jsonl` file.
-- **Coverage** depends on host hook events. The standalone desktop rules run locally. The separate Track 2 fixture demo uses the Synapse-generated MCP tool and records its test outcomes.
+- **Coverage** depends on host hook events. The desktop rules run locally. The integrated fixture demo uses the Synapse-generated MCP tool and records its test outcomes.
