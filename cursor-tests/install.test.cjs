@@ -17,11 +17,17 @@ test("install preserves other hooks and custom policy across reinstall and unins
   fs.writeFileSync(configPath, JSON.stringify(original));
   const python = findPython();
   const install = update("install", home, python);
+  const legacy = JSON.parse(fs.readFileSync(configPath));
+  const promptHook = legacy.hooks.beforeSubmitPrompt[0];
+  legacy.hooks.preToolUse.push({ command: promptHook.command.replace("'prompt'", "'tool'") });
+  legacy.hooks.beforeReadFile = [{ command: promptHook.command.replace("'prompt'", "'read'") }];
+  fs.writeFileSync(configPath, JSON.stringify(legacy));
   fs.appendFileSync(install.policy, "\nUser documentation\n");
   update("install", home, python);
   assert.equal(update("status", home).installed, true);
   const config = JSON.parse(fs.readFileSync(configPath));
-  assert.equal(config.hooks.preToolUse.length, 2);
+  assert.equal(config.hooks.preToolUse.length, 1);
+  assert.equal(config.hooks.beforeReadFile, undefined);
   assert.deepEqual(config.hooks.preToolUse[0], original.hooks.preToolUse[0]);
   assert.equal(config.hooks.beforeSubmitPrompt[0].failClosed, true);
   assert.match(fs.readFileSync(install.policy, "utf8"), /User documentation/);

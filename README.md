@@ -7,17 +7,17 @@
 - **The problem.** When an agent proposes deleting a file, it needs to identify the action, assess what could be lost, and check the owner's policy before acting. With those checks exposed as separate tools, the agent makes **three calls per action** and has to combine the results itself. A missed check can leave a risky action unreviewed.
 - **One tool runs all three checks.** Synapse CLI Custom mode composes action classification, consequence assessment, and policy checks into a single MCP tool. It returns one decision with the reason and matched rules.
 - **67% fewer tool calls.** In a live Codex comparison, the same three scenarios took **9 calls with individual tools and 3 with TrustLayer's composed tool**. Both approaches returned the same decisions. [Measured results](synapse/README.md)
-- **The user stays in control.** Pause flagged prompts and tool calls in Cursor or Codex. Choose **Block and refine prompt** to get a safer suggestion for the same chat, or **Approve & Proceed** to continue. Edit the local Markdown policy to choose what gets reviewed.
+- **The user stays in control.** Review flagged prompts before Cursor starts. Codex also supports separate tool review. Choose **Block and refine prompt** to get a safer suggestion for the same chat, or **Approve & Proceed** to continue. Edit the local Markdown policy to choose what gets reviewed.
 
 ## Install on Windows or macOS
 
 - **You need** a current Cursor or Codex client, Node.js 20+, and [Python 3.10+ with Tk](https://www.python.org/downloads/).
-- **Download** `keeerthanamg-trustlayer-ai-0.1.4.tgz`, then run one command from its folder.
+- **Download** `keeerthanamg-trustlayer-ai-0.1.5.tgz`, then run one command from its folder.
 
 | Host | Command |
 | --- | --- |
-| Cursor | `npx --yes --package ./keeerthanamg-trustlayer-ai-0.1.4.tgz trustlayer-ai install cursor` |
-| Codex | `npx --yes --package ./keeerthanamg-trustlayer-ai-0.1.4.tgz trustlayer-ai install codex` |
+| Cursor | `npx --yes --package ./keeerthanamg-trustlayer-ai-0.1.5.tgz trustlayer-ai install cursor` |
+| Codex | `npx --yes --package ./keeerthanamg-trustlayer-ai-0.1.5.tgz trustlayer-ai install codex` |
 
 - **Restart** the host. Open **Agent Chat** in Cursor. In Codex, review and trust the hooks in **Settings > Hooks** or `/hooks`.
 - **Windows PowerShell** can use `npx.cmd` if `npx` is blocked by execution policy.

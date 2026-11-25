@@ -22,7 +22,9 @@ function quote(value) {
 
 function update(action, home = os.homedir(), python, host = "cursor") {
   const codex = host === "codex";
-  const selectedEvents = codex ? { UserPromptSubmit: "codex-prompt", PreToolUse: "codex-tool" } : events;
+  const selectedEvents = codex ? { UserPromptSubmit: "codex-prompt", PreToolUse: "codex-tool" }
+    : { beforeSubmitPrompt: "prompt" };
+  const managedEvents = codex ? Object.keys(selectedEvents) : Object.keys(events);
   const cursor = codex && process.env.CODEX_HOME && home === os.homedir()
     ? process.env.CODEX_HOME : path.join(home, "." + host);
   const folder = path.join(cursor, "trustlayer");
@@ -37,7 +39,7 @@ function update(action, home = os.homedir(), python, host = "cursor") {
   }
 
   const ours = entry => typeof entry?.command === "string" && entry.command.includes(quote(bridge));
-  for (const event of Object.keys(selectedEvents)) {
+  for (const event of managedEvents) {
     if (event in config.hooks && !Array.isArray(config.hooks[event])) {
       throw new Error("Invalid hook list for " + event);
     }
@@ -46,7 +48,7 @@ function update(action, home = os.homedir(), python, host = "cursor") {
     return { installed: Object.keys(selectedEvents).every(event => (config.hooks[event] ?? []).some(entry =>
       ours(codex ? entry.hooks?.[0] : entry))), policy };
   }
-  if (action === "uninstall" && !Object.keys(events).some(
+  if (action === "uninstall" && !managedEvents.some(
     event => (config.hooks[event] ?? []).some(entry => ours(codex ? entry.hooks?.[0] : entry))
   )) return { installed: false, policy };
 
@@ -64,9 +66,10 @@ function update(action, home = os.homedir(), python, host = "cursor") {
     }
   }
 
-  for (const [event, mode] of Object.entries(selectedEvents)) {
+  for (const event of managedEvents) {
+    const mode = selectedEvents[event];
     const other = (config.hooks[event] ?? []).filter(entry => !ours(codex ? entry.hooks?.[0] : entry));
-    if (action === "install") {
+    if (action === "install" && mode) {
       const prefix = process.platform === "win32" ? "& " : "";
       const command = prefix + [python, "-I", "-B", bridge, mode, policy].map(quote).join(" ");
       other.push(codex ? { hooks: [{ type: "command", command, timeout: 45 }] }

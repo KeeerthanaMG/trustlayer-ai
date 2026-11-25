@@ -136,6 +136,10 @@ def main():
     mode = sys.argv[1]
     codex = mode.startswith("codex-")
     event = mode.removeprefix("codex-")
+    if not codex and event in {"tool", "read"}:
+        # Old Cursor registrations must stay silent even before a host restart.
+        print(json.dumps({"permission": "allow"}))
+        return
     default_policy = PACKAGE / "cursor" / "default-policy.md"
     host_dir = ".codex" if codex else ".cursor"
     user_policy = Path.home() / host_dir / "trustlayer" / "policy.md"
