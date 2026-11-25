@@ -1,11 +1,31 @@
 {
   "name": "@keeerthanamg/trustlayer-ai",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Local prompt review and pre-execution approval hooks for Cursor desktop",
-  "bin": {"trustlayer-ai": "cursor/install.cjs"},
-  "engines": {"node": ">=20"},
-  "files": [".cursor-plugin/plugin.json", "cursor/*.cjs", "cursor/*.py", "cursor/default-policy.md", "hooks/hooks.json", "trustlayer/__init__.py", "trustlayer/policies.py", "trustlayer/approval_dialog.py", "README.md"],
+  "bin": {
+    "trustlayer-ai": "cursor/install.cjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    ".cursor-plugin/plugin.json",
+    "cursor/*.cjs",
+    "cursor/*.py",
+    "cursor/default-policy.md",
+    "hooks/hooks.json",
+    "trustlayer/__init__.py",
+    "trustlayer/policies.py",
+    "trustlayer/approval_dialog.py",
+    "README.md",
+    ".codex-plugin/plugin.json",
+    "hooks/codex.json"
+  ],
   "repository": "https://github.com/KeeerthanaMG/trustlayer-ai.git",
-  "scripts": {"test": "node --test cursor-tests/install.test.cjs"},
-  "publishConfig": {"access": "public"}
+  "scripts": {
+    "test": "node --test cursor-tests/install.test.cjs"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

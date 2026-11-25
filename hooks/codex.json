@@ -1,0 +1,6 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [{"hooks":[{"type":"command","command":"node -e \"require(require('path').join(process.env.PLUGIN_ROOT,'cursor','launch.cjs')).run('codex-prompt')\"","timeout":45}]}],
+    "PreToolUse": [{"hooks":[{"type":"command","command":"node -e \"require(require('path').join(process.env.PLUGIN_ROOT,'cursor','launch.cjs')).run('codex-tool')\"","timeout":45}]}]
+  }
+}

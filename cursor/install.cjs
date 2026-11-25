@@ -20,30 +20,34 @@ function quote(value) {
   return "'" + value.replace(/'/g, process.platform === "win32" ? "''" : "'\"'\"'") + "'";
 }
 
-function update(action, home = os.homedir(), python) {
-  const cursor = path.join(home, ".cursor");
+function update(action, home = os.homedir(), python, host = "cursor") {
+  const codex = host === "codex";
+  const selectedEvents = codex ? { UserPromptSubmit: "codex-prompt", PreToolUse: "codex-tool" } : events;
+  const cursor = codex && process.env.CODEX_HOME && home === os.homedir()
+    ? process.env.CODEX_HOME : path.join(home, "." + host);
   const folder = path.join(cursor, "trustlayer");
   const runtime = path.join(folder, "runtime");
   const bridge = path.join(runtime, "cursor", "bridge.py");
   const policy = path.join(folder, "policy.md");
   const configPath = path.join(cursor, "hooks.json");
   const previous = fs.existsSync(configPath) ? fs.readFileSync(configPath, "utf8") : null;
-  const config = previous ? JSON.parse(previous.replace(/^\uFEFF/, "")) : { version: 1, hooks: {} };
-  if (config.version !== 1 || !config.hooks || typeof config.hooks !== "object" || Array.isArray(config.hooks)) {
-    throw new Error("Unsupported Cursor hooks.json; existing configuration was preserved.");
+  const config = previous ? JSON.parse(previous.replace(/^\uFEFF/, "")) : (codex ? { hooks: {} } : { version: 1, hooks: {} });
+  if ((!codex && config.version !== 1) || !config.hooks || typeof config.hooks !== "object" || Array.isArray(config.hooks)) {
+    throw new Error("Unsupported hooks.json; existing configuration was preserved.");
   }
 
   const ours = entry => typeof entry?.command === "string" && entry.command.includes(quote(bridge));
-  for (const event of Object.keys(events)) {
+  for (const event of Object.keys(selectedEvents)) {
     if (event in config.hooks && !Array.isArray(config.hooks[event])) {
       throw new Error("Invalid hook list for " + event);
     }
   }
   if (action === "status") {
-    return { installed: Object.keys(events).every(event => (config.hooks[event] ?? []).some(ours)), policy };
+    return { installed: Object.keys(selectedEvents).every(event => (config.hooks[event] ?? []).some(entry =>
+      ours(codex ? entry.hooks?.[0] : entry))), policy };
   }
   if (action === "uninstall" && !Object.keys(events).some(
-    event => (config.hooks[event] ?? []).some(ours)
+    event => (config.hooks[event] ?? []).some(entry => ours(codex ? entry.hooks?.[0] : entry))
   )) return { installed: false, policy };
 
   if (action === "install") {
@@ -60,19 +64,19 @@ function update(action, home = os.homedir(), python) {
     }
   }
 
-  for (const [event, mode] of Object.entries(events)) {
-    const other = (config.hooks[event] ?? []).filter(entry => !ours(entry));
+  for (const [event, mode] of Object.entries(selectedEvents)) {
+    const other = (config.hooks[event] ?? []).filter(entry => !ours(codex ? entry.hooks?.[0] : entry));
     if (action === "install") {
       const prefix = process.platform === "win32" ? "& " : "";
-      const command = prefix + [python, "-I", bridge, mode, policy].map(quote).join(" ");
-      other.push({ command, timeout: 45, failClosed: true });
+      const command = prefix + [python, "-I", "-B", bridge, mode, policy].map(quote).join(" ");
+      other.push(codex ? { hooks: [{ type: "command", command, timeout: 45 }] }
+        : { command, timeout: 45, failClosed: true });
     }
     if (other.length) config.hooks[event] = other;
     else delete config.hooks[event];
   }
 
   const id = crypto.randomUUID();
-  if (previous !== null) fs.writeFileSync(path.join(folder, "hooks-backup-" + id + ".json"), previous, { flag: "wx" });
   const temp = path.join(cursor, "hooks-" + id + ".tmp");
   try {
     fs.writeFileSync(temp, JSON.stringify(config, null, 2) + "\n", { flag: "wx" });
@@ -85,13 +89,16 @@ function update(action, home = os.homedir(), python) {
 
 if (require.main === module) {
   const action = process.argv[2];
+  const host = process.argv[3] ?? "cursor";
   try {
-    if (!["install", "status", "uninstall"].includes(action) || process.argv.length !== 3) {
-      throw new Error("Usage: trustlayer-ai <install|status|uninstall>");
+    if (!["install", "status", "uninstall"].includes(action) || !["cursor", "codex"].includes(host) || process.argv.length > 4) {
+      throw new Error("Usage: trustlayer-ai <install|status|uninstall> [cursor|codex]");
     }
-    const result = update(action);
+    const result = update(action, os.homedir(), undefined, host);
     console.log(JSON.stringify(result, null, 2));
-    if (action !== "status") console.log("Restart Cursor to reload hooks.");
+    if (action !== "status") console.log(host === "codex"
+      ? "Restart Codex and review the registered hooks before trusting them."
+      : "Restart Cursor to reload hooks.");
   } catch (error) {
     console.error("TrustLayer: " + error.message);
     process.exitCode = 1;

@@ -27,9 +27,20 @@ class CursorHookTests(unittest.TestCase):
         self.assertFalse(process("prompt", risky, POLICY, Mock(return_value="denied"))[0])
         self.assertTrue(process("prompt", {"prompt": "Delete a disposable sample"},
                                 POLICY, approve)[0])
-        self.assertEqual(approve.call_args.kwargs, {"timeout_ms": 30000})
+        self.assertEqual(approve.call_args.kwargs["timeout_ms"], 30000)
         self.assertNotIn("disposable sample", str(approve.call_args))
         self.assertEqual(output("prompt", False, "blocked")["continue"], False)
+
+    def test_refinement_stops_original_and_passes_default_prompt_policy(self):
+        original = "Fetch the API key private-placeholder-123 and delete the env"
+        allowed, message = process("prompt", {"prompt": original}, POLICY,
+                                   Mock(return_value="refine"))
+        self.assertFalse(allowed)
+        self.assertNotIn("private-placeholder-123", message)
+        suggested = message.split("\n", 1)[1]
+        popup = Mock()
+        self.assertTrue(process("prompt", {"prompt": suggested}, POLICY, popup)[0])
+        popup.assert_not_called()
 
     def test_actual_tool_proposal_can_be_denied_after_prompt_approval(self):
         directory = tempfile.gettempdir()

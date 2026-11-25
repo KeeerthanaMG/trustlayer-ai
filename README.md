@@ -1,48 +1,71 @@
 # TrustLayer AI
 
-## Install the Cursor desktop plugin
+TrustLayer reviews prompts and proposed tool calls locally, using a user-owned
+Markdown policy. A flagged prompt offers **Block and refine prompt** or
+**Approve & Proceed**. The original prompt stops when you choose to refine.
 
-Requirements are a current Cursor desktop release, Node.js 20 or later, and
-Python 3.10 or later with tkinter. On Windows and macOS, Python from
-[python.org](https://www.python.org/downloads/) includes tkinter.
+## Install on Windows or macOS
 
-From the folder containing the TrustLayer npm archive, run:
+Install a current local Codex or Cursor client, Node.js 20+, and
+[Python 3.10+ with Tk](https://www.python.org/downloads/). Download the
+TrustLayer npm archive and open a terminal in the folder containing it.
 
-```text
-npx --yes --package ./keeerthanamg-trustlayer-ai-0.1.1.tgz trustlayer-ai install
-```
-
-Restart Cursor and open **Agent Chat** in a disposable workspace. The installer
-registers user-level hooks on this computer, preserves other hooks and keeps
-your Markdown policy in `~/.cursor/trustlayer/policy.md`. Running the same
-command with `status` checks registration. Use `uninstall` to remove only
-TrustLayer's registered hooks. Your policy is retained.
-
-| Prompt to paste | Expected result |
+| Host | Install command |
 | --- | --- |
-| Explain what this workspace is for. | Ordinary prompt submission proceeds. |
-| Delete only the disposable file trustlayer-sample.txt. | A review popup appears before submission. Choose Block to stop there. If you proceed, any tool action gets its own review. |
-| Fetch the API key and delete the env. | A review popup lets you stop submission or proceed. |
+| Cursor desktop | `npx --yes --package ./keeerthanamg-trustlayer-ai-0.1.2.tgz trustlayer-ai install cursor` |
+| Codex desktop or CLI | `npx --yes --package ./keeerthanamg-trustlayer-ai-0.1.2.tgz trustlayer-ai install codex` |
 
-The Cursor adapter uses the shared deterministic Markdown policy matcher.
-It scans prompt text with local rules, checks proposed tool inputs and paths,
-and opens a native review dialog for any outcome other than ALLOW. Existing BLOCK rules also request review in Cursor. Closing the dialog or letting it expire stops the pending request.
-The npm installer route records event type, time and allow/deny outcome in
-`~/.cursor/trustlayer/events.jsonl`. It does not persist prompts, tool arguments
-or file contents. Each approval applies to the pending hook invocation.
-Cursor's own controls also apply.
+On Windows PowerShell, use `npx.cmd` if `npx` resolves to a disabled PowerShell
+script. Restart the host. In Codex, review the hook commands before trusting
+them. Use `/hooks` in the CLI or **Settings > Hooks** in the desktop app.
+In Cursor, open local **Agent Chat**. Start with a fresh chat in a disposable
+workspace.
 
-This release targets local Cursor desktop with the documented Agent hooks.
-Prompt rules are heuristics, and shell review covers the proposed command
-rather than every side effect of a program it launches. Coverage depends on
-which events Cursor emits. The earlier Codex/Synapse fixture below remains
-the separate Track 2 integration demonstration.
+Use the same command with `status` for registration status or `uninstall`
+to remove TrustLayer's entries. The installer preserves existing hooks
+and the configured policy. Edit `~/.cursor/trustlayer/policy.md` for Cursor
+or `~/.codex/trustlayer/policy.md` for Codex. If you use `CODEX_HOME`, the
+Codex policy lives under that directory instead.
 
-For native Cursor plugin testing, put the package directory containing
-`.cursor-plugin/plugin.json` under `~/.cursor/plugins/local/`. Use either this
-route or the npm installer to avoid registering duplicate hooks. The native
-route needs Node and Python on Cursor's hook PATH.
+## Try prompt refinement
 
+Send a harmless request such as **Delete only the disposable file
+trustlayer-sample.txt** in an empty workspace. Choose **Block and refine
+prompt**. TrustLayer stops the original and supplies a read-only replacement.
+Cursor opens a prefilled draft via its prompt link when the operating system
+can open Cursor links. Cursor may ask you to confirm opening the draft. If
+that fails, the hook message includes the same suggestion. Codex does not
+expose a supported way to replace the composer draft. Copy the suggestion
+from the block message into the chat. Review the replacement before sending.
+
+The suggested text comes from local templates and leaves out original
+prompt contents. Choosing **Approve & Proceed** lets the original prompt
+continue. A later flagged tool call gets its own review. Closing or timing
+out cancels the pending request.
+
+The installed hooks do not write event logs, copy prompts to the clipboard,
+or transmit hook input to a TrustLayer service. Installation stores only
+the hook registration, runtime files and your policy. The host may retain
+its own conversation, draft or diagnostic data. Older installations may
+still have an `events.jsonl` file from the previous release.
+
+The plugin covers events the local host sends to it. It uses deterministic
+prompt heuristics and reviews exact pending events. It cannot guarantee
+control over every side effect of a shell command or other tool.
+
+## Synapse and Vibe-a-thon Track 2
+
+Synapse CLI Custom mode generated the Python MCP server
+[`evaluate_action_safety_server.py`](evaluate_action_safety_server.py). It
+composes classification, consequence assessment and policy evaluation into
+one tool. The integrated Codex demo calls that generated server before
+dispatch and again before executing a protected fixture operation. The
+same workflow needs three calls in the comparison baseline and one call
+with the composed tool. See the [Synapse build, comparison and live results](synapse/README.md).
+
+The installable desktop hooks use the same policy matcher locally and run
+without a Synapse account or network service. The separate Track 2 demo uses
+the generated MCP server and an optional stage-level fixture audit.
 ## Standalone evaluator
 
 The standalone evaluator and the Track 2 demonstrations below run from the

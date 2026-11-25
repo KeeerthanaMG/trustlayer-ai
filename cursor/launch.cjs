@@ -14,9 +14,9 @@ function findPython() {
   throw new Error("Install Python 3.10+ with tkinter (the python.org desktop installer works).");
 }
 
-if (require.main === module) {
+function run(mode) {
   try {
-    const result = spawnSync(findPython(), ["-I", require("node:path").join(__dirname, "bridge.py"), process.argv[2]], {
+    const result = spawnSync(findPython(), ["-I", "-B", require("node:path").join(__dirname, "bridge.py"), mode], {
       stdio: "inherit", timeout: 41000, windowsHide: true,
     });
     process.exit(result.status === 0 ? 0 : 2);
@@ -24,4 +24,5 @@ if (require.main === module) {
     process.exit(2);
   }
 }
-module.exports = { findPython };
+if (require.main === module) run(process.argv[2]);
+module.exports = { findPython, run };

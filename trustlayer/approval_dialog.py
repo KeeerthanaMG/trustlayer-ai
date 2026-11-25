@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import ttk
 
 
-def ask(review, timeout_ms=None):
+def ask(review, timeout_ms=None, refinement=None):
     result = "denied"
     root = tk.Tk()
     root.title("TrustLayer AI | Review action")
@@ -19,6 +19,9 @@ def ask(review, timeout_ms=None):
         f"{review['reason']}\n{review['consequence']}"
     )
     ttk.Label(frame, text=details, wraplength=560, justify="left").pack(anchor="w")
+    if refinement:
+        ttk.Label(frame, text="Suggested prompt\n" + refinement, wraplength=560,
+                  justify="left").pack(anchor="w", pady=(12, 0))
     buttons = ttk.Frame(frame)
     buttons.pack(anchor="e", pady=(18, 0))
 
@@ -27,7 +30,8 @@ def ask(review, timeout_ms=None):
         result = choice
         root.destroy()
 
-    deny = ttk.Button(buttons, text="Block", command=close)
+    deny = ttk.Button(buttons, text="Block and refine prompt" if refinement else "Block",
+                      command=lambda: close("refine" if refinement else "denied"))
     deny.pack(side="left", padx=(0, 8))
     ttk.Button(
         buttons, text="Approve & Proceed", command=lambda: close("approved")

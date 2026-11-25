@@ -2,9 +2,10 @@
 import json
 import os
 import re
+import subprocess
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import quote
 
 PACKAGE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PACKAGE))
@@ -25,6 +26,11 @@ DISCLOSURE = re.compile(
 )
 SENSITIVE_FILENAMES = {".npmrc", ".netrc", "credentials", "id_rsa", "id_ed25519"}
 FILE_TOOLS = {"Read": "file.read", "Write": "file.write", "Delete": "file.delete"}
+REFINEMENTS = {
+    "secret-destructive": "Explain how to rotate sensitive configuration safely using placeholders. Give a read-only plan and leave the workspace unchanged.",
+    "destructive": "Outline a reversible, read-only plan for the workspace cleanup. Identify what needs my confirmation before any changes.",
+    "ordinary": "Give me a read-only plan for my goal. Explain the scope and ask for confirmation before making any changes.",
+}
 
 
 def classify_prompt(payload):
@@ -108,7 +114,14 @@ def process(event, payload, policy, show=ask):
             "risk": "review required", "reason": explanation,
             "consequence": "This decision applies only to the pending Cursor event.",
         }
-        return show(review, timeout_ms=30000) == "approved", "Approval declined or expired."
+        if event == "prompt":
+            refinement = REFINEMENTS[resource]
+            choice = show(review, timeout_ms=30000, refinement=refinement)
+            if choice == "refine":
+                return False, "Suggested prompt (review before sending):\n" + refinement
+        else:
+            choice = show(review, timeout_ms=30000)
+        return choice == "approved", "Approval declined or expired."
     return True, ""
 
 
@@ -121,26 +134,51 @@ def output(event, allowed, reason):
     return result
 
 
+def open_cursor_draft(refinement):
+    """Open a new draft via Cursor's documented URL without sending it."""
+    url = "cursor://anysphere.cursor-deeplink/prompt?text=" + quote(refinement, safe="")
+    try:
+        if sys.platform == "win32":
+            os.startfile(url)
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except OSError:
+        pass
+
+
 def main():
-    event = sys.argv[1]
+    mode = sys.argv[1]
+    codex = mode.startswith("codex-")
+    event = mode.removeprefix("codex-")
     default_policy = PACKAGE / "cursor" / "default-policy.md"
-    user_policy = Path.home() / ".cursor" / "trustlayer" / "policy.md"
+    host_dir = ".codex" if codex else ".cursor"
+    user_policy = Path.home() / host_dir / "trustlayer" / "policy.md"
     policy = Path(sys.argv[2]) if len(sys.argv) > 2 else (
         user_policy if os.path.lexists(user_policy) else default_policy
     )
     try:
         payload = json.load(sys.stdin)
+        if codex and event == "tool" and payload.get("tool_name") in {"Bash", "exec_command"}:
+            payload["tool_name"] = "Shell"
+            arguments = payload["tool_input"]
+            arguments["command"] = arguments.get("command") or arguments.get("cmd")
+            arguments["working_directory"] = arguments.get("working_directory") or arguments.get("workdir")
         allowed, reason = process(event, payload, policy)
     except Exception:
         allowed, reason = False, "TrustLayer could not safely evaluate the request."
-    if len(sys.argv) > 2:
-        try:
-            with policy.with_name("events.jsonl").open("a", encoding="utf-8") as log:
-                log.write(json.dumps({"time": datetime.now(timezone.utc).isoformat(),
-                                      "event": event, "allowed": allowed}) + "\n")
-        except OSError:
-            pass
-    print(json.dumps(output(event, allowed, reason)))
+    if codex:
+        if allowed:
+            response = {}
+        elif event == "prompt":
+            response = {"decision": "block", "reason": reason}
+        else:
+            response = {"hookSpecificOutput": {"hookEventName": "PreToolUse",
+                        "permissionDecision": "deny", "permissionDecisionReason": reason}}
+    else:
+        response = output(event, allowed, reason)
+    print(json.dumps(response), flush=True)
+    if not codex and event == "prompt" and reason.startswith("Suggested prompt (review before sending):\n"):
+        open_cursor_draft(reason.split("\n", 1)[1])
 
 
 if __name__ == "__main__":

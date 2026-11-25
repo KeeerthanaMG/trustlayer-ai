@@ -49,3 +49,23 @@ test("a missing interpreter does not clobber malformed user configuration", t =>
   assert.throws(() => update("install", home, "missing-python"));
   assert.equal(fs.readFileSync(config, "utf8"), "{ broken");
 });
+
+test("Codex installs native hook definitions and processes a safe prompt without an audit file", t => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "trustlayer codex "));
+  t.after(() => fs.rmSync(home, { recursive: true, force: true }));
+  const result = update("install", home, findPython(), "codex");
+  const config = JSON.parse(fs.readFileSync(path.join(home, ".codex", "hooks.json")));
+  const command = config.hooks.UserPromptSubmit[0].hooks[0].command;
+  assert.equal(config.hooks.PreToolUse[0].hooks[0].type, "command");
+  const execution = process.platform === "win32"
+    ? ["powershell.exe", ["-NoProfile", "-Command", command]]
+    : ["/bin/sh", ["-c", command]];
+  const processResult = spawnSync(...execution, {
+    input: JSON.stringify({ prompt: "Explain the workspace" }),
+    encoding: "utf8", cwd: home,
+  });
+  assert.equal(processResult.status, 0, processResult.stderr);
+  assert.deepEqual(JSON.parse(processResult.stdout), {});
+  assert.equal(fs.existsSync(path.join(path.dirname(result.policy), "events.jsonl")), false);
+  assert.equal(update("status", home, undefined, "codex").installed, true);
+});
