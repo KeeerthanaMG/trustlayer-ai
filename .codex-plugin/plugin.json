@@ -1,6 +1,6 @@
 {
   "name": "trustlayer-ai",
-  "version": "0.1.6",
+  "version": "0.2.0-rc.1",
   "description": "Local prompt and tool review with user-approved refinements",
   "hooks": "./hooks/codex.json"
 }

@@ -8,64 +8,19 @@ from pathlib import Path
 PACKAGE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PACKAGE))
 from trustlayer.approval_dialog import ask
-from trustlayer.policies import Decision, load_policies, match_policies
+from trustlayer.policies import Decision, PolicyError, load_policies, match_policies
 
-SECRET = re.compile(
-    r"(?<![\w.])\.env(?:\b|(?=\.))|\b(?:api[ _-]?keys?|tokens?|credentials?|passwords?|secrets?)\b"
-    r"|\bprintenv\b|\benv:|(?:^|[/\\])(?:\.npmrc|\.netrc|\.ssh|\.aws|id_rsa|id_ed25519)(?:$|[/\\])",
-    re.IGNORECASE,
-)
-DESTRUCTIVE = re.compile(
-    r"\b(?:delete|remove|erase|wipe|destroy|truncate)\b|\breset\s+--hard\b", re.IGNORECASE
-)
-DISCLOSURE = re.compile(
-    r"\b(?:fetch|dump|print|reveal|show|send|upload|extract|display|expose|read|copy)\b",
-    re.IGNORECASE,
-)
+from cursor.prompt_policy import SECRET, prompt_category, refine_prompt
+
 SENSITIVE_FILENAMES = {".npmrc", ".netrc", "credentials", "id_rsa", "id_ed25519"}
 FILE_TOOLS = {"Read": "file.read", "Write": "file.write", "Delete": "file.delete"}
-CLEANUP_TARGETS = re.compile(
-    r"\bgenerated (?:files|artifacts)\b|\b(?:old )?build outputs?\b"
-    r"|\b(?:unused )?(?:temporary|temp) files\b|\b(?:stale )?caches?\b", re.I
-)
-REVIEWABLE = re.compile(r"^(?:please\s+)?(?:find|list|inspect|analy[sz]e|explain|identify|"
-                        r"summari[sz]e|describe|give|compare|check|walk|document)\b", re.I)
-SENSITIVE_VALUE = re.compile(r"\b[\w.-]+\s*=\s*\S+|https?://|[A-Za-z0-9_+/=-]{24,}")
-
-
-def refine_prompt(prompt):
-    """Carry independent read-only requests forward and replace risky steps with review."""
-    clauses = re.split(r"[\n;]+|(?<=[.!?])\s+|\s+(?:and|then)\s+(?=(?:delete|remove|"
-                       r"erase|wipe|destroy|truncate|fetch|reveal|upload|expose|run|execute|"
-                       r"install|overwrite|write|send|copy|move|rename|push|publish|list|"
-                       r"explain|identify|summari[sz]e|inspect|describe)\b)", prompt, flags=re.I)
-    safe = [clause.strip(" ,") for clause in clauses
-            if REVIEWABLE.match(clause.strip(" ,")) and not (
-                SECRET.search(clause) or DESTRUCTIVE.search(clause)
-                or SENSITIVE_VALUE.search(clause) or '`' in clause
-            )]
-    targets = list(dict.fromkeys(match.group().lower() for match in CLEANUP_TARGETS.finditer(prompt)))
-    if targets:
-        safe.insert(0, "Analyze the repository for cleanup candidates, including " + ", ".join(targets))
-    elif re.search(r"\b(?:clean\s*up|cleanup)\b", prompt, re.I):
-        safe.insert(0, "Analyze the repository and list cleanup candidates with reasons")
-    if SECRET.search(prompt):
-        safe.append("Leave sensitive configuration untouched and omit its values")
-    if not safe:
-        safe.append("Outline a read-only plan for the requested work and ask me to clarify the scope")
-    safe.append("Leave the workspace unchanged and wait for my confirmation before making changes")
-    return " ".join(part.rstrip(".?!") + "." for part in safe)
 
 
 def classify_prompt(payload):
     prompt = payload["prompt"]
     if not isinstance(prompt, str):
         raise ValueError("Invalid prompt")
-    destructive = DESTRUCTIVE.search(prompt)
-    if SECRET.search(prompt) and (destructive or DISCLOSURE.search(prompt)):
-        category = "secret-destructive"
-    else:
-        category = "destructive" if destructive else "ordinary"
+    category = prompt_category(prompt)
     return "prompt.submit", category, "Prompt category: " + category
 
 
@@ -129,17 +84,23 @@ def process(event, payload, policy, show=ask):
         raise ValueError("Unknown event")
 
     action, resource, target = proposed
-    decision, matches = match_policies(load_policies(policy), action, resource)
+    rules = load_policies(policy)
+    prompt = payload["prompt"] if event == "prompt" else ""
+    decision, matches = match_policies(rules, action, resource, prompt=prompt)
     decisive = ", ".join(rule.id for rule in matches if rule.decision == decision)
     explanation = f"Matched policy: {decisive}" if decisive else "No matching policy rule."
     if decision != Decision.ALLOW:
         review = {
             "action": action, "resource": target, "target": target,
             "risk": "review required", "reason": explanation,
-            "consequence": "This decision applies only to the pending Cursor event.",
+            "consequence": "This decision applies only to the pending request.",
         }
         if event == "prompt":
-            refinement = refine_prompt(payload["prompt"])
+            refinement = refine_prompt(prompt)
+            refined_decision, _ = match_policies(rules, action, prompt_category(refinement),
+                                                 prompt=refinement)
+            if refined_decision != Decision.ALLOW:
+                review["consequence"] = "Your policy may also request review of the suggested draft."
             choice = show(review, timeout_ms=30000, refinement=refinement)
             if choice == "refine":
                 return False, "Suggested prompt:\n" + refinement
@@ -160,6 +121,17 @@ def output(event, allowed, reason):
 
 def main():
     mode = sys.argv[1]
+    if mode == "policy-check":
+        try:
+            rules = load_policies(Path(sys.argv[2]))
+        except IndexError:
+            print("Provide a policy file path.", file=sys.stderr)
+            raise SystemExit(2)
+        except PolicyError as error:
+            print(f"Invalid TrustLayer policy: {error}", file=sys.stderr)
+            raise SystemExit(2)
+        print(f"Valid TrustLayer policy ({len(rules)} rules).")
+        return
     codex = mode.startswith("codex-")
     event = mode.removeprefix("codex-")
     if not codex and event in {"tool", "read"}:
@@ -169,9 +141,15 @@ def main():
     default_policy = PACKAGE / "cursor" / "default-policy.md"
     host_dir = ".codex" if codex else ".cursor"
     user_policy = Path.home() / host_dir / "trustlayer" / "policy.md"
-    policy = Path(sys.argv[2]) if len(sys.argv) > 2 else (
-        user_policy if os.path.lexists(user_policy) else default_policy
-    )
+    if len(sys.argv) > 2:
+        user_policy = Path(sys.argv[2])
+    json_policy = user_policy.with_suffix(".json")
+    if os.path.lexists(json_policy):
+        policy = json_policy
+    elif len(sys.argv) > 2 or os.path.lexists(user_policy):
+        policy = user_policy
+    else:
+        policy = default_policy
     try:
         payload = json.load(sys.stdin)
         if codex and event == "tool" and payload.get("tool_name") in {"Bash", "exec_command"}:
@@ -180,6 +158,8 @@ def main():
             arguments["command"] = arguments.get("command") or arguments.get("cmd")
             arguments["working_directory"] = arguments.get("working_directory") or arguments.get("workdir")
         allowed, reason = process(event, payload, policy)
+    except PolicyError:
+        allowed, reason = False, "TrustLayer could not load your policy. Run the policy check and correct the file."
     except Exception:
         allowed, reason = False, "TrustLayer could not safely evaluate the request."
     if codex:

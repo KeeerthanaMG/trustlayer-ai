@@ -23,6 +23,8 @@
 - **Windows PowerShell** can use `npx.cmd` if `npx` is blocked by execution policy.
 - **Manage** with the same command using `status` or `uninstall` in place of `install`.
 
+[Testing release and custom-policy guide](docs/tester-guide.md)
+
 ## Demo in 30 seconds
 
 1. In a disposable workspace, send **“Delete only the disposable file trustlayer-sample.txt.”**

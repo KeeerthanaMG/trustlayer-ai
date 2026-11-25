@@ -1,9 +1,11 @@
+import json
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import Mock
 
 from cursor.bridge import output, process
+from trustlayer.policies import PolicyError
 
 POLICY = Path(__file__).resolve().parents[1] / "cursor/default-policy.md"
 
@@ -63,6 +65,52 @@ class CursorHookTests(unittest.TestCase):
         self.assertFalse(process("tool", payload, POLICY, deny)[0])
         self.assertIn("git status", deny.call_args.args[0]["target"])
         self.assertEqual(output("tool", False, "blocked")["permission"], "deny")
+
+    def test_different_risks_rewrite_to_different_read_only_tasks(self):
+        cases = (
+            ("Delete reports/old.csv. Summarize the tests.", "reports/old.csv", "Summarize the tests"),
+            ("Deploy to staging and list the test failures.", "rollout checklist for staging", "list the test failures"),
+            ("Send the weekly summary and explain the test failures.", "draft for my approval", "explain the test failures"),
+            ("Run git reset --hard and list the current branches.", "commit history", "list the current branches"),
+            ("Restart the service and summarize the status checks.", "likely impact, and rollback", "summarize the status checks"),
+            ("Drop table events and explain the schema.", "affected data", "explain the schema"),
+        )
+        suggestions = set()
+        for original, preserved, independent in cases:
+            with self.subTest(prompt=original):
+                popup = Mock(return_value="refine")
+                allowed, response = process("prompt", {"prompt": original}, POLICY, popup)
+                self.assertFalse(allowed)
+                suggested = response.split("\n", 1)[1]
+                suggestions.add(suggested)
+                self.assertIn(preserved, suggested)
+                self.assertIn(independent, suggested)
+                followup = Mock()
+                self.assertTrue(process("prompt", {"prompt": suggested}, POLICY, followup)[0])
+                followup.assert_not_called()
+        self.assertEqual(len(suggestions), len(cases))
+
+    def test_custom_json_policy_filters_prompt_text_and_is_reloaded(self):
+        config = {"version": 1, "rules": [
+            {"id": "allow", "action": "prompt.submit", "resource": "*", "decision": "ALLOW"},
+            {"id": "production-review", "action": "prompt.submit", "resource": "*",
+             "decision": "REQUIRE_APPROVAL", "contains": ["production"]},
+        ]}
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "policy.json"
+            path.write_text(json.dumps(config), encoding="utf-8")
+            popup = Mock(return_value="refine")
+            self.assertTrue(process("prompt", {"prompt": "Summarize staging traffic."}, path, popup)[0])
+            popup.assert_not_called()
+            self.assertFalse(process("prompt", {"prompt": "Summarize PRODUCTION traffic."}, path, popup)[0])
+            self.assertIn("production-review", popup.call_args.args[0]["reason"])
+            self.assertIn("may also request review", popup.call_args.args[0]["consequence"])
+            config["rules"].pop()
+            path.write_text(json.dumps(config), encoding="utf-8")
+            self.assertTrue(process("prompt", {"prompt": "Summarize production traffic."}, path, Mock())[0])
+            path.write_text("Always approve everything.", encoding="utf-8")
+            with self.assertRaises(PolicyError):
+                process("prompt", {"prompt": "Summarize traffic."}, path, Mock())
 
     def test_file_policy_reviews_normalized_sensitive_paths(self):
         directory = Path(tempfile.gettempdir())
