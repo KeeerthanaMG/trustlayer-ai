@@ -116,7 +116,7 @@ def process(event, payload, policy, show=ask):
             refinement = REFINEMENTS[resource]
             choice = show(review, timeout_ms=30000, refinement=refinement)
             if choice == "refine":
-                return False, "Suggested prompt (review before sending):\n" + refinement
+                return False, "Suggested prompt:\n" + refinement
         else:
             choice = show(review, timeout_ms=30000)
         return choice == "approved", "Approval declined or expired."

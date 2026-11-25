@@ -1,4 +1,4 @@
-﻿# TrustLayer AI
+# TrustLayer AI
 
 **Three safety checks. One call. Catch risky AI actions before they run.**
 
@@ -12,12 +12,12 @@
 ## Install on Windows or macOS
 
 - **You need** a current Cursor or Codex client, Node.js 20+, and [Python 3.10+ with Tk](https://www.python.org/downloads/).
-- **Download** `keeerthanamg-trustlayer-ai-0.1.3.tgz`, then run one command from its folder.
+- **Download** `keeerthanamg-trustlayer-ai-0.1.4.tgz`, then run one command from its folder.
 
 | Host | Command |
 | --- | --- |
-| Cursor | `npx --yes --package ./keeerthanamg-trustlayer-ai-0.1.3.tgz trustlayer-ai install cursor` |
-| Codex | `npx --yes --package ./keeerthanamg-trustlayer-ai-0.1.3.tgz trustlayer-ai install codex` |
+| Cursor | `npx --yes --package ./keeerthanamg-trustlayer-ai-0.1.4.tgz trustlayer-ai install cursor` |
+| Codex | `npx --yes --package ./keeerthanamg-trustlayer-ai-0.1.4.tgz trustlayer-ai install codex` |
 
 - **Restart** the host. Open **Agent Chat** in Cursor. In Codex, review and trust the hooks in **Settings > Hooks** or `/hooks`.
 - **Windows PowerShell** can use `npx.cmd` if `npx` is blocked by execution policy.
@@ -26,8 +26,8 @@
 ## Demo in 30 seconds
 
 1. In a disposable workspace, send **“Delete only the disposable file trustlayer-sample.txt.”**
-2. Choose **Block and refine prompt**. The original stops and TrustLayer shows a read-only suggestion.
-3. Paste the suggestion into the **current** chat and review it before sending. The host hook APIs do not expose in-place composer editing.
+2. Click **Copy prompt**, then **Block and refine prompt** to stop the original.
+3. Paste the suggestion into the **current** chat and send. The host hook APIs do not expose in-place composer editing.
 
 ## See it in action
 
