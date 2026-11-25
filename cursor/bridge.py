@@ -2,10 +2,8 @@
 import json
 import os
 import re
-import subprocess
 import sys
 from pathlib import Path
-from urllib.parse import quote
 
 PACKAGE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PACKAGE))
@@ -134,18 +132,6 @@ def output(event, allowed, reason):
     return result
 
 
-def open_cursor_draft(refinement):
-    """Open a new draft via Cursor's documented URL without sending it."""
-    url = "cursor://anysphere.cursor-deeplink/prompt?text=" + quote(refinement, safe="")
-    try:
-        if sys.platform == "win32":
-            os.startfile(url)
-        elif sys.platform == "darwin":
-            subprocess.Popen(["open", url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    except OSError:
-        pass
-
-
 def main():
     mode = sys.argv[1]
     codex = mode.startswith("codex-")
@@ -177,8 +163,6 @@ def main():
     else:
         response = output(event, allowed, reason)
     print(json.dumps(response), flush=True)
-    if not codex and event == "prompt" and reason.startswith("Suggested prompt (review before sending):\n"):
-        open_cursor_draft(reason.split("\n", 1)[1])
 
 
 if __name__ == "__main__":

@@ -20,8 +20,11 @@ def ask(review, timeout_ms=None, refinement=None):
     )
     ttk.Label(frame, text=details, wraplength=560, justify="left").pack(anchor="w")
     if refinement:
-        ttk.Label(frame, text="Suggested prompt\n" + refinement, wraplength=560,
-                  justify="left").pack(anchor="w", pady=(12, 0))
+        ttk.Label(frame, text="Suggested prompt for this chat").pack(anchor="w", pady=(12, 2))
+        suggestion = tk.Text(frame, height=4, width=66, wrap="word", exportselection=False)
+        suggestion.insert("1.0", refinement)
+        suggestion.configure(state="disabled")
+        suggestion.pack(anchor="w", fill="x")
     buttons = ttk.Frame(frame)
     buttons.pack(anchor="e", pady=(18, 0))
 
