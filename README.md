@@ -12,7 +12,7 @@
 ## Install on Windows or macOS
 
 - **You need** a current Cursor or Codex client, Node.js 20+, and [Python 3.10+ with Tk](https://www.python.org/downloads/).
-- **Download** `keeerthanamg-trustlayer-ai-0.1.6.tgz` from [GitHub Releases](https://github.com/KeeerthanaMG/trustlayer-ai/releases), then run one command from its folder. From a source checkout, `npm pack` builds the same installer.
+- **Download** [the v0.1.6 installer](https://github.com/KeeerthanaMG/trustlayer-ai/releases/download/v0.1.6/keeerthanamg-trustlayer-ai-0.1.6.tgz) and its [SHA-256 checksum](https://github.com/KeeerthanaMG/trustlayer-ai/releases/download/v0.1.6/keeerthanamg-trustlayer-ai-0.1.6.tgz.sha256). Run one command from the download folder. From a source checkout, `npm pack` builds the installer.
 
 | Host | Command |
 | --- | --- |
