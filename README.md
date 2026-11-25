@@ -12,7 +12,7 @@
 ## Install on Windows or macOS
 
 - **You need** a current Cursor or Codex client, Node.js 20+, and [Python 3.10+ with Tk](https://www.python.org/downloads/).
-- **Download** `keeerthanamg-trustlayer-ai-0.1.6.tgz`, then run one command from its folder.
+- **Download** `keeerthanamg-trustlayer-ai-0.1.6.tgz` from [GitHub Releases](https://github.com/KeeerthanaMG/trustlayer-ai/releases), then run one command from its folder. From a source checkout, `npm pack` builds the same installer.
 
 | Host | Command |
 | --- | --- |
@@ -33,7 +33,7 @@
 
 - The Codex hook calls the Synapse-generated evaluator before dispatch. The fixture executor checks the decision again before allowing the operation.
 
-[Synapse build and measured results](synapse/README.md) · [End-to-end demo and test commands](docs/demo.md)
+[Synapse build and measured results](synapse/README.md) · [End-to-end demo and test commands](docs/demo.md) · [Hackathon submission and demo script](docs/submission.md)
 
 ## Privacy and coverage
 
