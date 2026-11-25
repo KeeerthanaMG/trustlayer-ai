@@ -12,12 +12,12 @@
 ## Install on Windows or macOS
 
 - **You need** a current Cursor or Codex client, Node.js 20+, and [Python 3.10+ with Tk](https://www.python.org/downloads/).
-- **Download** `keeerthanamg-trustlayer-ai-0.1.5.tgz`, then run one command from its folder.
+- **Download** `keeerthanamg-trustlayer-ai-0.1.6.tgz`, then run one command from its folder.
 
 | Host | Command |
 | --- | --- |
-| Cursor | `npx --yes --package ./keeerthanamg-trustlayer-ai-0.1.5.tgz trustlayer-ai install cursor` |
-| Codex | `npx --yes --package ./keeerthanamg-trustlayer-ai-0.1.5.tgz trustlayer-ai install codex` |
+| Cursor | `npx --yes --package ./keeerthanamg-trustlayer-ai-0.1.6.tgz trustlayer-ai install cursor` |
+| Codex | `npx --yes --package ./keeerthanamg-trustlayer-ai-0.1.6.tgz trustlayer-ai install codex` |
 
 - **Restart** the host. Open **Agent Chat** in Cursor. In Codex, review and trust the hooks in **Settings > Hooks** or `/hooks`.
 - **Windows PowerShell** can use `npx.cmd` if `npx` is blocked by execution policy.

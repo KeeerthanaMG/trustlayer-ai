@@ -24,11 +24,37 @@ DISCLOSURE = re.compile(
 )
 SENSITIVE_FILENAMES = {".npmrc", ".netrc", "credentials", "id_rsa", "id_ed25519"}
 FILE_TOOLS = {"Read": "file.read", "Write": "file.write", "Delete": "file.delete"}
-REFINEMENTS = {
-    "secret-destructive": "Explain how to rotate sensitive configuration safely using placeholders. Give a read-only plan and leave the workspace unchanged.",
-    "destructive": "Outline a reversible, read-only plan for the workspace cleanup. Identify what needs my confirmation before any changes.",
-    "ordinary": "Give me a read-only plan for my goal. Explain the scope and ask for confirmation before making any changes.",
-}
+CLEANUP_TARGETS = re.compile(
+    r"\bgenerated (?:files|artifacts)\b|\b(?:old )?build outputs?\b"
+    r"|\b(?:unused )?(?:temporary|temp) files\b|\b(?:stale )?caches?\b", re.I
+)
+REVIEWABLE = re.compile(r"^(?:please\s+)?(?:find|list|inspect|analy[sz]e|explain|identify|"
+                        r"summari[sz]e|describe|give|compare|check|walk|document)\b", re.I)
+SENSITIVE_VALUE = re.compile(r"\b[\w.-]+\s*=\s*\S+|https?://|[A-Za-z0-9_+/=-]{24,}")
+
+
+def refine_prompt(prompt):
+    """Carry independent read-only requests forward and replace risky steps with review."""
+    clauses = re.split(r"[\n;]+|(?<=[.!?])\s+|\s+(?:and|then)\s+(?=(?:delete|remove|"
+                       r"erase|wipe|destroy|truncate|fetch|reveal|upload|expose|run|execute|"
+                       r"install|overwrite|write|send|copy|move|rename|push|publish|list|"
+                       r"explain|identify|summari[sz]e|inspect|describe)\b)", prompt, flags=re.I)
+    safe = [clause.strip(" ,") for clause in clauses
+            if REVIEWABLE.match(clause.strip(" ,")) and not (
+                SECRET.search(clause) or DESTRUCTIVE.search(clause)
+                or SENSITIVE_VALUE.search(clause) or '`' in clause
+            )]
+    targets = list(dict.fromkeys(match.group().lower() for match in CLEANUP_TARGETS.finditer(prompt)))
+    if targets:
+        safe.insert(0, "Analyze the repository for cleanup candidates, including " + ", ".join(targets))
+    elif re.search(r"\b(?:clean\s*up|cleanup)\b", prompt, re.I):
+        safe.insert(0, "Analyze the repository and list cleanup candidates with reasons")
+    if SECRET.search(prompt):
+        safe.append("Leave sensitive configuration untouched and omit its values")
+    if not safe:
+        safe.append("Outline a read-only plan for the requested work and ask me to clarify the scope")
+    safe.append("Leave the workspace unchanged and wait for my confirmation before making changes")
+    return " ".join(part.rstrip(".?!") + "." for part in safe)
 
 
 def classify_prompt(payload):
@@ -113,7 +139,7 @@ def process(event, payload, policy, show=ask):
             "consequence": "This decision applies only to the pending Cursor event.",
         }
         if event == "prompt":
-            refinement = REFINEMENTS[resource]
+            refinement = refine_prompt(payload["prompt"])
             choice = show(review, timeout_ms=30000, refinement=refinement)
             if choice == "refine":
                 return False, "Suggested prompt:\n" + refinement

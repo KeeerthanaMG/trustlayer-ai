@@ -42,6 +42,19 @@ class CursorHookTests(unittest.TestCase):
         self.assertTrue(process("prompt", {"prompt": suggested}, POLICY, popup)[0])
         popup.assert_not_called()
 
+    def test_refinement_keeps_cleanup_and_independent_safe_tasks(self):
+        original = ("Find generated files, old build output, remove .env files and unused temporary "
+                    "files we can delete. Give me a list of candidates first. Explain where the app starts.")
+        allowed, message = process("prompt", {"prompt": original}, POLICY,
+                                   Mock(return_value="refine"))
+        self.assertFalse(allowed)
+        suggested = message.split("\n", 1)[1]
+        for phrase in ("generated files", "old build output", "unused temporary files",
+                       "list of candidates", "Explain where the app starts", "wait for my confirmation"):
+            self.assertIn(phrase, suggested)
+        self.assertNotIn(".env", suggested)
+        self.assertTrue(process("prompt", {"prompt": suggested}, POLICY, Mock())[0])
+
     def test_actual_tool_proposal_can_be_denied_after_prompt_approval(self):
         directory = tempfile.gettempdir()
         payload = {"tool_name": "Shell", "tool_input": {"command": "git status"},
