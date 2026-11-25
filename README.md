@@ -12,18 +12,18 @@
 ## Install on Windows or macOS
 
 - **You need** a current Cursor or Codex client, Node.js 20+, and [Python 3.10+ with Tk](https://www.python.org/downloads/).
-- **Download** [the v0.1.6 installer](https://github.com/KeeerthanaMG/trustlayer-ai/releases/download/v0.1.6/keeerthanamg-trustlayer-ai-0.1.6.tgz) and its [SHA-256 checksum](https://github.com/KeeerthanaMG/trustlayer-ai/releases/download/v0.1.6/keeerthanamg-trustlayer-ai-0.1.6.tgz.sha256). Run one command from the download folder. From a source checkout, `npm pack` builds the installer.
+- **Download** [the v0.2.0 installer](https://github.com/KeeerthanaMG/trustlayer-ai/releases/download/v0.2.0/keeerthanamg-trustlayer-ai-0.2.0.tgz) and its [SHA-256 checksum](https://github.com/KeeerthanaMG/trustlayer-ai/releases/download/v0.2.0/keeerthanamg-trustlayer-ai-0.2.0.tgz.sha256). Run one command from the download folder. From a source checkout, `npm pack` builds the installer.
 
 | Host | Command |
 | --- | --- |
-| Cursor | `npx --yes --package ./keeerthanamg-trustlayer-ai-0.1.6.tgz trustlayer-ai install cursor` |
-| Codex | `npx --yes --package ./keeerthanamg-trustlayer-ai-0.1.6.tgz trustlayer-ai install codex` |
+| Cursor | `npx --yes --package ./keeerthanamg-trustlayer-ai-0.2.0.tgz trustlayer-ai install cursor` |
+| Codex | `npx --yes --package ./keeerthanamg-trustlayer-ai-0.2.0.tgz trustlayer-ai install codex` |
 
 - **Restart** the host. Open **Agent Chat** in Cursor. In Codex, review and trust the hooks in **Settings > Hooks** or `/hooks`.
 - **Windows PowerShell** can use `npx.cmd` if `npx` is blocked by execution policy.
 - **Manage** with the same command using `status` or `uninstall` in place of `install`.
 
-[Testing release and custom-policy guide](docs/tester-guide.md)
+[Custom-policy and testing guide](docs/tester-guide.md)
 
 ## Demo in 30 seconds
 

@@ -1,4 +1,4 @@
-﻿# TrustLayer AI · Vibe-a-thon submission
+# TrustLayer AI · Vibe-a-thon submission
 
 ## Paste-ready project description
 
@@ -17,7 +17,7 @@ requires human confirmation before deleting the test file.
 ## What to submit
 
 - **Source:** [GitHub repository](https://github.com/KeeerthanaMG/trustlayer-ai).
-- **Installer:** the v0.1.6 npm archive on the GitHub release, with its SHA-256 checksum.
+- **Installer:** the v0.2.0 npm archive on the GitHub release, with its SHA-256 checksum.
 - **Technical evidence:** [Generated MCP server](../evaluate_action_safety_server.py),
   [Synapse setup and measurements](../synapse/README.md), and
   [reproducible live demo](demo.md).

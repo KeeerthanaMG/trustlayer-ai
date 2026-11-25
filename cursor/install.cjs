@@ -12,7 +12,7 @@ const events = {
   beforeReadFile: "read",
 };
 const runtimeFiles = [
-  "cursor/bridge.py", "cursor/prompt_policy.py", "cursor/default-policy.md", "trustlayer/__init__.py",
+  "cursor/__init__.py", "cursor/bridge.py", "cursor/prompt_policy.py", "cursor/default-policy.md", "trustlayer/__init__.py",
   "trustlayer/policies.py", "trustlayer/approval_dialog.py",
 ];
 

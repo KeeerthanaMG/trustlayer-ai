@@ -1,18 +1,18 @@
-﻿# TrustLayer tester guide
+# TrustLayer tester guide
 
-## Install the release candidate
+## Install the current release
 
 - Use current Cursor or Codex, Node.js 20+, and Python 3.10+ with Tk.
-- Download `keeerthanamg-trustlayer-ai-0.2.0-rc.1.tgz`. From that folder, run:
+- Download [the current installer](https://github.com/KeeerthanaMG/trustlayer-ai/releases/download/v0.2.0/keeerthanamg-trustlayer-ai-0.2.0.tgz). From that folder, run:
 
 ```text
-npx --yes --package ./keeerthanamg-trustlayer-ai-0.2.0-rc.1.tgz trustlayer-ai install cursor
+npx --yes --package ./keeerthanamg-trustlayer-ai-0.2.0.tgz trustlayer-ai install cursor
 ```
 
 - Use `install codex` for Codex. Restart the host. In Codex, review and trust
   the hooks via `/hooks` or Settings.
 - On Windows PowerShell, use `npx.cmd` if `npx` is blocked.
-- Upgrading preserves your existing Markdown policy. Use the stable installer
+- Upgrading preserves your existing Markdown policy. Use the [v0.1.6 installer](https://github.com/KeeerthanaMG/trustlayer-ai/releases/tag/v0.1.6)
   again if you need to roll back.
 
 ## Customize policy
